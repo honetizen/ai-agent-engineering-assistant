@@ -7,4 +7,7 @@ app = FastAPI(title="AI GitHub Engineering Assistant")
 @app.get("/health")
 async def health() -> dict[str, str]:
     """Return the service health status."""
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "service": "ai-github-engineering-assistant",
+    }
