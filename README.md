@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AI GitHub Engineering Assistant
 
 AI GitHub Engineering Assistant 是一个面向 GitHub 工程协作场景的后端服务。项目目标是逐步接入 GitHub 数据，为后续的工程信息分析与辅助能力提供清晰、可扩展的服务基础。
@@ -36,3 +37,6 @@ AI GitHub Engineering Assistant 是一个面向 GitHub 工程协作场景的后�
    ```json
    {"status": "ok"}
    ```
+=======
+# ai-agent-engineering-assistant
+>>>>>>> 8d75b80454e4707fab4c2e45a183b9ce77be8abf
