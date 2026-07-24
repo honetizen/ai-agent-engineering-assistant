@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 
+from app.api.pull_requests import router as pull_requests_router
+
 
 app = FastAPI(title="AI GitHub Engineering Assistant")
+app.include_router(pull_requests_router)
 
 
 @app.get("/health")
