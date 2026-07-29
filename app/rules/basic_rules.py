@@ -1,39 +1,53 @@
 from collections.abc import Callable
 
+from app.config.review_config import ReviewRuleConfig
 from app.schemas.diff import PullRequestFile
 from app.schemas.review import ReviewFinding
-
-
-SENSITIVE_FILE_KEYWORDS = (
-    ".env",
-    "secret",
-    "credential",
-    "token",
-    "key",
-    "settings",
-    "config",
-)
 
 
 def _normalized_path(filename: str) -> str:
     return filename.replace("\\", "/").lower()
 
 
-def _is_test_python_file(filename: str) -> bool:
+def _has_business_extension(
+    filename: str,
+    config: ReviewRuleConfig,
+) -> bool:
     normalized = _normalized_path(filename)
-    return normalized.startswith("tests/") and normalized.endswith(".py")
+    return any(
+        normalized.endswith(extension)
+        for extension in config.business_extensions
+    )
 
 
-def missing_tests(files: list[PullRequestFile]) -> list[ReviewFinding]:
-    """Flag Python business changes when no Python test file changed."""
-    has_business_python = any(
-        _normalized_path(file.filename).endswith(".py")
-        and not _normalized_path(file.filename).startswith("tests/")
+def _is_in_test_directory(
+    filename: str,
+    config: ReviewRuleConfig,
+) -> bool:
+    normalized = _normalized_path(filename)
+    return any(
+        normalized.startswith(directory)
+        for directory in config.test_directories
+    )
+
+
+def missing_tests(
+    files: list[PullRequestFile],
+    config: ReviewRuleConfig,
+) -> list[ReviewFinding]:
+    """Flag business-file changes when no configured test file changed."""
+    has_business_file = any(
+        _has_business_extension(file.filename, config)
+        and not _is_in_test_directory(file.filename, config)
         for file in files
     )
-    has_python_tests = any(_is_test_python_file(file.filename) for file in files)
+    has_test_file = any(
+        _has_business_extension(file.filename, config)
+        and _is_in_test_directory(file.filename, config)
+        for file in files
+    )
 
-    if has_business_python and not has_python_tests:
+    if has_business_file and not has_test_file:
         return [
             ReviewFinding(
                 rule_id="missing_tests",
@@ -44,12 +58,15 @@ def missing_tests(files: list[PullRequestFile]) -> list[ReviewFinding]:
     return []
 
 
-def sensitive_file_changed(files: list[PullRequestFile]) -> list[ReviewFinding]:
+def sensitive_file_changed(
+    files: list[PullRequestFile],
+    config: ReviewRuleConfig,
+) -> list[ReviewFinding]:
     """Flag every changed file whose path contains a sensitive keyword."""
     findings = []
     for file in files:
         normalized = _normalized_path(file.filename)
-        if any(keyword in normalized for keyword in SENSITIVE_FILE_KEYWORDS):
+        if any(pattern in normalized for pattern in config.sensitive_patterns):
             findings.append(
                 ReviewFinding(
                     rule_id="sensitive_file_changed",
@@ -61,10 +78,13 @@ def sensitive_file_changed(files: list[PullRequestFile]) -> list[ReviewFinding]:
     return findings
 
 
-def large_pull_request(files: list[PullRequestFile]) -> list[ReviewFinding]:
+def large_pull_request(
+    files: list[PullRequestFile],
+    config: ReviewRuleConfig,
+) -> list[ReviewFinding]:
     """Flag pull requests that exceed file-count or total-change limits."""
     total_changes = sum(file.changes for file in files)
-    if len(files) > 10 or total_changes > 300:
+    if len(files) > config.max_files or total_changes > config.max_changes:
         return [
             ReviewFinding(
                 rule_id="large_pull_request",
@@ -75,7 +95,10 @@ def large_pull_request(files: list[PullRequestFile]) -> list[ReviewFinding]:
     return []
 
 
-def patch_unavailable(files: list[PullRequestFile]) -> list[ReviewFinding]:
+def patch_unavailable(
+    files: list[PullRequestFile],
+    config: ReviewRuleConfig,
+) -> list[ReviewFinding]:
     """Flag every file for which GitHub did not provide patch content."""
     return [
         ReviewFinding(
@@ -89,7 +112,10 @@ def patch_unavailable(files: list[PullRequestFile]) -> list[ReviewFinding]:
     ]
 
 
-Rule = Callable[[list[PullRequestFile]], list[ReviewFinding]]
+Rule = Callable[
+    [list[PullRequestFile], ReviewRuleConfig],
+    list[ReviewFinding],
+]
 
 BASIC_RULES: tuple[Rule, ...] = (
     missing_tests,
