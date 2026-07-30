@@ -1,3 +1,5 @@
+import base64
+import binascii
 import os
 
 import httpx
@@ -132,4 +134,60 @@ class GitHubClient:
                 for file in data
             ]
         except (KeyError, TypeError, ValueError) as exc:
+            raise GitHubUpstreamError from exc
+
+    async def get_repository_file(
+        self,
+        owner: str,
+        repo: str,
+        path: str,
+    ) -> str:
+        """Return a UTF-8 repository file decoded from GitHub Contents API."""
+        headers = {
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "ai-github-engineering-assistant",
+        }
+        if self._token:
+            headers["Authorization"] = f"Bearer {self._token}"
+
+        try:
+            async with httpx.AsyncClient(
+                base_url="https://api.github.com",
+                headers=headers,
+                timeout=httpx.Timeout(30.0),
+                transport=self._transport,
+            ) as client:
+                response = await client.get(
+                    f"/repos/{owner}/{repo}/contents/{path}"
+                )
+        except httpx.TimeoutException as exc:
+            raise GitHubTimeoutError from exc
+        except httpx.RequestError as exc:
+            raise GitHubUpstreamError from exc
+
+        if response.status_code == 404:
+            raise GitHubNotFoundError
+        if response.is_error:
+            raise GitHubUpstreamError
+
+        try:
+            data = response.json()
+            if data["encoding"] != "base64":
+                raise ValueError
+            encoded_content = data["content"]
+            if not isinstance(encoded_content, str):
+                raise TypeError
+            compact_content = "".join(encoded_content.split())
+            return base64.b64decode(
+                compact_content,
+                validate=True,
+            ).decode("utf-8")
+        except (
+            KeyError,
+            TypeError,
+            ValueError,
+            binascii.Error,
+            UnicodeDecodeError,
+        ) as exc:
             raise GitHubUpstreamError from exc

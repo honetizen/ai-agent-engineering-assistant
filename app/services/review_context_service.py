@@ -1,6 +1,7 @@
 from app.config.review_config import ReviewRuleConfig
 from app.schemas.review_context import ReviewContext
 from app.services.github_client import GitHubClient
+from app.services.project_context_service import get_project_context
 from app.services.review_service import review_pull_request
 
 
@@ -20,9 +21,15 @@ async def build_review_context(
         pull_number,
     )
     rule_report = review_pull_request(changed_files, review_config)
+    project_context = await get_project_context(
+        owner,
+        repo,
+        github_client=client,
+    )
 
     return ReviewContext(
         pull_request=pull_request,
         changed_files=changed_files,
         rule_report=rule_report,
+        project_context=project_context,
     )

@@ -49,6 +49,8 @@ def test_pull_request_context_returns_complete_context() -> None:
             return httpx.Response(200, json=GITHUB_FILES)
         if request.url.path.endswith("/pulls/1"):
             return httpx.Response(200, json=GITHUB_METADATA)
+        if "/contents/" in request.url.path:
+            return httpx.Response(404, json={"message": "Not Found"})
         raise AssertionError(f"Unexpected GitHub path: {request.url.path}")
 
     with client_with_transport(httpx.MockTransport(handler)) as client:
@@ -95,6 +97,11 @@ def test_pull_request_context_returns_complete_context() -> None:
                 }
             ],
             "files_reviewed": 1,
+        },
+        "project_context": {
+            "readme": None,
+            "architecture": None,
+            "contributing": None,
         },
     }
 
