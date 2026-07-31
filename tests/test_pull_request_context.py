@@ -103,6 +103,10 @@ def test_pull_request_context_returns_complete_context() -> None:
             "architecture": None,
             "contributing": None,
         },
+        "code_context": {
+            "changed_file_contents": {},
+            "related_test_contents": {},
+        },
     }
 
 

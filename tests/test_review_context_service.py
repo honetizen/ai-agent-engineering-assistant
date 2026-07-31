@@ -59,6 +59,8 @@ def test_build_review_context_combines_all_inputs() -> None:
     assert context.rule_report.risk_level == "medium"
     assert context.rule_report.findings[0].rule_id == "missing_tests"
     assert context.project_context.readme is None
+    assert context.code_context.changed_file_contents == {}
+    assert context.code_context.related_test_contents == {}
     client.get_pull_request.assert_awaited_once_with("example", "project", 1)
     client.get_pull_request_files.assert_awaited_once_with(
         "example",
@@ -121,4 +123,8 @@ def test_empty_file_list_builds_context() -> None:
         "readme": None,
         "architecture": None,
         "contributing": None,
+    }
+    assert context.code_context.model_dump() == {
+        "changed_file_contents": {},
+        "related_test_contents": {},
     }

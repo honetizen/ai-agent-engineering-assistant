@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+from app.schemas.code_context import CodeContext
 from app.schemas.diff import PullRequestFile
 from app.schemas.project_context import ProjectContext
 from app.schemas.pull_request import PullRequestMetadata
@@ -13,3 +14,4 @@ class ReviewContext(BaseModel):
     changed_files: list[PullRequestFile]
     rule_report: ReviewReport
     project_context: ProjectContext
+    code_context: CodeContext
