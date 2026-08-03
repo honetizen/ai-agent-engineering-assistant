@@ -74,7 +74,7 @@ def test_custom_provider_replaces_mock_provider() -> None:
     report = review_context(context, provider=provider)
 
     assert isinstance(provider.received_prompt, AIReviewPrompt)
-    assert "=== REVIEW POLICY ===" in provider.received_prompt.review_input
+    assert "<REVIEW_POLICY>" in provider.received_prompt.review_input
     assert "Add AI review skeleton" in provider.received_prompt.review_input
     assert isinstance(report, AIReviewReport)
     assert report.summary == "Custom review completed"
