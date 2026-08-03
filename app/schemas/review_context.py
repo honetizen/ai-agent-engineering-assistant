@@ -5,6 +5,7 @@ from app.schemas.diff import PullRequestFile
 from app.schemas.project_context import ProjectContext
 from app.schemas.pull_request import PullRequestMetadata
 from app.schemas.review import ReviewReport
+from app.schemas.review_policy import ReviewPolicy
 
 
 class ReviewContext(BaseModel):
@@ -15,3 +16,4 @@ class ReviewContext(BaseModel):
     rule_report: ReviewReport
     project_context: ProjectContext
     code_context: CodeContext
+    review_policy: ReviewPolicy

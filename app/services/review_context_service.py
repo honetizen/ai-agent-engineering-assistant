@@ -1,5 +1,7 @@
+from app.config.review_policy import DEFAULT_REVIEW_POLICY
 from app.config.review_config import ReviewRuleConfig
 from app.schemas.review_context import ReviewContext
+from app.schemas.review_policy import ReviewPolicy
 from app.services.code_context_service import build_code_context
 from app.services.github_client import GitHubClient
 from app.services.project_context_service import get_project_context
@@ -12,6 +14,7 @@ async def build_review_context(
     pull_number: int,
     github_client: GitHubClient | None = None,
     review_config: ReviewRuleConfig | None = None,
+    review_policy: ReviewPolicy | None = None,
 ) -> ReviewContext:
     """Fetch PR inputs, run deterministic rules, and combine the results."""
     client = github_client if github_client is not None else GitHubClient()
@@ -33,6 +36,11 @@ async def build_review_context(
         changed_files,
         github_client=client,
     )
+    active_review_policy = (
+        review_policy
+        if review_policy is not None
+        else DEFAULT_REVIEW_POLICY.model_copy(deep=True)
+    )
 
     return ReviewContext(
         pull_request=pull_request,
@@ -40,4 +48,5 @@ async def build_review_context(
         rule_report=rule_report,
         project_context=project_context,
         code_context=code_context,
+        review_policy=active_review_policy,
     )

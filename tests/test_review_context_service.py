@@ -61,6 +61,12 @@ def test_build_review_context_combines_all_inputs() -> None:
     assert context.project_context.readme is None
     assert context.code_context.changed_file_contents == {}
     assert context.code_context.related_test_contents == {}
+    assert context.review_policy.review_focus == [
+        "correctness",
+        "security",
+        "architecture",
+        "test",
+    ]
     client.get_pull_request.assert_awaited_once_with("example", "project", 1)
     client.get_pull_request_files.assert_awaited_once_with(
         "example",
@@ -127,4 +133,8 @@ def test_empty_file_list_builds_context() -> None:
     assert context.code_context.model_dump() == {
         "changed_file_contents": {},
         "related_test_contents": {},
+    }
+    assert context.review_policy.severity_rules == {
+        "security": "high",
+        "architecture": "medium",
     }

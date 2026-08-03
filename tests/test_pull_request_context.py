@@ -107,6 +107,23 @@ def test_pull_request_context_returns_complete_context() -> None:
             "changed_file_contents": {},
             "related_test_contents": {},
         },
+        "review_policy": {
+            "review_focus": [
+                "correctness",
+                "security",
+                "architecture",
+                "test",
+            ],
+            "custom_instructions": None,
+            "severity_rules": {
+                "security": "high",
+                "architecture": "medium",
+            },
+            "output_requirements": [
+                "必须指出文件位置",
+                "必须提供修改建议",
+            ],
+        },
     }
 
 
