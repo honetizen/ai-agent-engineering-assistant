@@ -14,7 +14,11 @@ def test_project_context_reads_readme_and_allows_missing_documents() -> None:
     ]
 
     context = asyncio.run(
-        get_project_context("example", "project", github_client=client)
+        get_project_context(
+            "example/project",
+            "base-sha-123",
+            github_client=client,
+        )
     )
 
     assert context.readme == "# Example project"
@@ -32,7 +36,11 @@ def test_project_context_combines_multiple_documents() -> None:
     ]
 
     context = asyncio.run(
-        get_project_context("example", "project", github_client=client)
+        get_project_context(
+            "example/project",
+            "base-sha-123",
+            github_client=client,
+        )
     )
 
     assert context.model_dump() == {
@@ -45,6 +53,9 @@ def test_project_context_combines_multiple_documents() -> None:
         "project",
         "README.md",
     )
+    assert client.get_repository_file.await_args_list[0].kwargs == {
+        "ref": "base-sha-123"
+    }
     assert client.get_repository_file.await_args_list[1].args == (
         "example",
         "project",
@@ -54,4 +65,8 @@ def test_project_context_combines_multiple_documents() -> None:
         "example",
         "project",
         "CONTRIBUTING.md",
+    )
+    assert all(
+        call.kwargs == {"ref": "base-sha-123"}
+        for call in client.get_repository_file.await_args_list
     )

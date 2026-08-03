@@ -26,13 +26,13 @@ async def build_review_context(
     )
     rule_report = review_pull_request(changed_files, review_config)
     project_context = await get_project_context(
-        owner,
-        repo,
+        pull_request.base_repository,
+        pull_request.base_sha,
         github_client=client,
     )
     code_context = await build_code_context(
-        owner,
-        repo,
+        pull_request.head_repository,
+        pull_request.head_sha,
         changed_files,
         github_client=client,
     )

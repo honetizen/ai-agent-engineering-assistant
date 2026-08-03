@@ -1,5 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.exceptions.ai_provider import (
+    AIProviderConfigurationError,
+    AIProviderError,
+    AIProviderResponseError,
+    AIProviderTimeoutError,
+)
 from app.schemas.ai_review import AIReviewReport
 from app.schemas.diff import PullRequestFile
 from app.schemas.pull_request import PullRequestMetadata
@@ -12,6 +18,7 @@ from app.services.github_client import (
     GitHubUpstreamError,
 )
 from app.services.ai_review_service import review_context as run_ai_review
+from app.services.openai_provider import create_openai_provider
 from app.services.review_context_service import build_review_context
 from app.services.review_service import review_pull_request
 
@@ -40,7 +47,7 @@ async def get_pull_request_ai_review(
             pull_number,
             github_client=github_client,
         )
-        return run_ai_review(context)
+        return await run_ai_review(context)
     except GitHubNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -55,6 +62,62 @@ async def get_pull_request_ai_review(
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="GitHub request failed",
+        ) from None
+
+
+@router.post(
+    "/repos/{owner}/{repo}/pulls/{pull_number}/ai-review/openai",
+    response_model=AIReviewReport,
+)
+async def get_pull_request_openai_review(
+    owner: str,
+    repo: str,
+    pull_number: int,
+    github_client: GitHubClient = Depends(get_github_client),
+) -> AIReviewReport:
+    try:
+        context = await build_review_context(
+            owner,
+            repo,
+            pull_number,
+            github_client=github_client,
+        )
+        provider = create_openai_provider()
+        return await run_ai_review(context, provider=provider)
+    except GitHubNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Pull request not found",
+        ) from None
+    except GitHubTimeoutError:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="GitHub request timed out",
+        ) from None
+    except GitHubUpstreamError:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="GitHub request failed",
+        ) from None
+    except AIProviderConfigurationError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="OpenAI provider is not configured",
+        ) from None
+    except AIProviderTimeoutError:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="AI provider request timed out",
+        ) from None
+    except AIProviderResponseError:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider response failed",
+        ) from None
+    except AIProviderError:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider request failed",
         ) from None
 
 

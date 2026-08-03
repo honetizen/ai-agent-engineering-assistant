@@ -3,15 +3,17 @@ from pathlib import PurePosixPath
 from app.schemas.code_context import CodeContext
 from app.schemas.diff import PullRequestFile
 from app.services.github_client import GitHubClient, GitHubNotFoundError
+from app.services.repository import split_repository_full_name
 
 
 async def build_code_context(
-    owner: str,
-    repo: str,
+    repository: str,
+    ref: str,
     changed_files: list[PullRequestFile],
     github_client: GitHubClient | None = None,
 ) -> CodeContext:
     """Fetch changed files and fixed-path test candidates without scanning."""
+    owner, repo = split_repository_full_name(repository)
     client = github_client if github_client is not None else GitHubClient()
     changed_file_contents: dict[str, str] = {}
     related_test_contents: dict[str, str] = {}
@@ -22,6 +24,7 @@ async def build_code_context(
             owner,
             repo,
             file.filename,
+            ref,
         )
         if content is not None:
             changed_file_contents[file.filename] = content
@@ -37,6 +40,7 @@ async def build_code_context(
             owner,
             repo,
             test_path,
+            ref,
         )
         if content is not None:
             related_test_contents[test_path] = content
@@ -64,8 +68,14 @@ async def _get_optional_file(
     owner: str,
     repo: str,
     path: str,
+    ref: str,
 ) -> str | None:
     try:
-        return await github_client.get_repository_file(owner, repo, path)
+        return await github_client.get_repository_file(
+            owner,
+            repo,
+            path,
+            ref=ref,
+        )
     except GitHubNotFoundError:
         return None

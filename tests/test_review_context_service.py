@@ -17,6 +17,10 @@ def pull_request_metadata(*, changed_files: int = 1) -> PullRequestMetadata:
         author="honetizen",
         base_branch="main",
         head_branch="feature/review-context",
+        base_sha="base-sha-123",
+        head_sha="head-sha-456",
+        base_repository="company/project",
+        head_repository="contributor/project",
         commits=1,
         changed_files=changed_files,
         additions=5,
@@ -72,6 +76,18 @@ def test_build_review_context_combines_all_inputs() -> None:
         "example",
         "project",
         1,
+    )
+    repository_calls = client.get_repository_file.await_args_list
+    assert len(repository_calls) == 6
+    assert all(
+        call.args[:2] == ("company", "project")
+        and call.kwargs == {"ref": "base-sha-123"}
+        for call in repository_calls[:3]
+    )
+    assert all(
+        call.args[:2] == ("contributor", "project")
+        and call.kwargs == {"ref": "head-sha-456"}
+        for call in repository_calls[3:]
     )
 
 

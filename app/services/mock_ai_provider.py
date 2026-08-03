@@ -6,7 +6,7 @@ from app.services.ai_provider import AIProvider
 class MockAIProvider(AIProvider):
     """Deterministic provider used before a real AI integration exists."""
 
-    def review(self, prompt: AIReviewPrompt) -> AIReviewReport:
+    async def review(self, prompt: AIReviewPrompt) -> AIReviewReport:
         return AIReviewReport(
             summary="Mock AI review completed",
             findings=[],

@@ -13,8 +13,16 @@ GITHUB_PR = {
     "state": "closed",
     "merged": True,
     "user": {"login": "honetizen"},
-    "base": {"ref": "main"},
-    "head": {"ref": "feature/health-check-test"},
+    "base": {
+        "ref": "main",
+        "sha": "base-sha-123",
+        "repo": {"full_name": "honetizen/ai-agent-engineering-assistant"},
+    },
+    "head": {
+        "ref": "feature/health-check-test",
+        "sha": "head-sha-456",
+        "repo": {"full_name": "honetizen/ai-agent-engineering-assistant"},
+    },
     "commits": 1,
     "changed_files": 3,
     "additions": 19,
@@ -53,6 +61,10 @@ def test_get_pull_request_returns_structured_metadata() -> None:
         "author": "honetizen",
         "base_branch": "main",
         "head_branch": "feature/health-check-test",
+        "base_sha": "base-sha-123",
+        "head_sha": "head-sha-456",
+        "base_repository": "honetizen/ai-agent-engineering-assistant",
+        "head_repository": "honetizen/ai-agent-engineering-assistant",
         "commits": 1,
         "changed_files": 3,
         "additions": 19,
@@ -84,3 +96,23 @@ def test_get_pull_request_maps_github_timeout() -> None:
 
     assert response.status_code == 504
     assert response.json() == {"detail": "GitHub request timed out"}
+
+
+def test_get_pull_request_rejects_missing_version_metadata() -> None:
+    malformed_pr = {
+        **GITHUB_PR,
+        "head": {
+            "ref": "feature/health-check-test",
+            "repo": {"full_name": "honetizen/ai-agent-engineering-assistant"},
+        },
+    }
+    transport = httpx.MockTransport(
+        lambda request: httpx.Response(200, json=malformed_pr)
+    )
+
+    with client_with_transport(transport) as client:
+        response = client.get(PR_PATH)
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 502
+    assert response.json() == {"detail": "GitHub request failed"}

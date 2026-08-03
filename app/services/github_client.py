@@ -1,6 +1,7 @@
 import base64
 import binascii
 import os
+from urllib.parse import quote
 
 import httpx
 
@@ -75,6 +76,10 @@ class GitHubClient:
                 author=data["user"]["login"],
                 base_branch=data["base"]["ref"],
                 head_branch=data["head"]["ref"],
+                base_sha=data["base"]["sha"],
+                head_sha=data["head"]["sha"],
+                base_repository=data["base"]["repo"]["full_name"],
+                head_repository=data["head"]["repo"]["full_name"],
                 commits=data["commits"],
                 changed_files=data["changed_files"],
                 additions=data["additions"],
@@ -82,7 +87,9 @@ class GitHubClient:
                 html_url=data["html_url"],
             )
         except (KeyError, TypeError, ValueError) as exc:
-            raise GitHubUpstreamError from exc
+            raise GitHubUpstreamError(
+                "Invalid GitHub pull request response"
+            ) from exc
 
     async def get_pull_request_files(
         self,
@@ -141,6 +148,7 @@ class GitHubClient:
         owner: str,
         repo: str,
         path: str,
+        ref: str | None = None,
     ) -> str:
         """Return a UTF-8 repository file decoded from GitHub Contents API."""
         headers = {
@@ -158,8 +166,16 @@ class GitHubClient:
                 timeout=httpx.Timeout(30.0),
                 transport=self._transport,
             ) as client:
+                params = {"ref": ref} if ref is not None else None
+                encoded_owner = quote(owner, safe="")
+                encoded_repo = quote(repo, safe="")
+                encoded_path = quote(path, safe="/")
                 response = await client.get(
-                    f"/repos/{owner}/{repo}/contents/{path}"
+                    (
+                        f"/repos/{encoded_owner}/{encoded_repo}/contents/"
+                        f"{encoded_path}"
+                    ),
+                    params=params,
                 )
         except httpx.TimeoutException as exc:
             raise GitHubTimeoutError from exc

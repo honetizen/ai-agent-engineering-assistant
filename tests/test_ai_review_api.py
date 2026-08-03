@@ -13,8 +13,16 @@ GITHUB_METADATA = {
     "state": "open",
     "merged": False,
     "user": {"login": "developer"},
-    "base": {"ref": "main"},
-    "head": {"ref": "feature/ai-review"},
+    "base": {
+        "ref": "main",
+        "sha": "base-sha-123",
+        "repo": {"full_name": "example/project"},
+    },
+    "head": {
+        "ref": "feature/ai-review",
+        "sha": "head-sha-456",
+        "repo": {"full_name": "example/project"},
+    },
     "commits": 1,
     "changed_files": 0,
     "additions": 0,

@@ -24,6 +24,10 @@ def complete_context() -> ReviewContext:
             author="developer",
             base_branch="main",
             head_branch="feature/login",
+            base_sha="base-sha-123",
+            head_sha="head-sha-456",
+            base_repository="company/project",
+            head_repository="contributor/project",
             commits=2,
             changed_files=1,
             additions=12,
@@ -90,6 +94,10 @@ def test_prompt_contains_fixed_boundaries_and_all_context() -> None:
     assert "author: developer" in review_input
     assert "base_branch: main" in review_input
     assert "head_branch: feature/login" in review_input
+    assert "base_repository: company/project" in review_input
+    assert "head_repository: contributor/project" in review_input
+    assert "base_sha: base-sha-123" in review_input
+    assert "head_sha: head-sha-456" in review_input
 
     assert "<DETERMINISTIC_RULE_REPORT>" in review_input
     assert "risk_level: high" in review_input
