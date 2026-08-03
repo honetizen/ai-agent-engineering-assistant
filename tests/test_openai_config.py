@@ -28,6 +28,21 @@ def test_missing_openai_api_key_is_configuration_error(
         load_openai_provider_config()
 
 
+def test_missing_openai_review_model_is_configuration_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-private-test")
+    monkeypatch.delenv("OPENAI_REVIEW_MODEL", raising=False)
+
+    with pytest.raises(
+        AIProviderConfigurationError,
+        match="OPENAI_REVIEW_MODEL is required for the OpenAI review provider",
+    ) as error:
+        load_openai_provider_config()
+
+    assert "sk-private-test" not in str(error.value)
+
+
 @pytest.mark.parametrize(
     ("name", "value"),
     [
@@ -43,6 +58,7 @@ def test_invalid_numeric_configuration_is_rejected(
     value: str,
 ) -> None:
     monkeypatch.setenv("OPENAI_API_KEY", "sk-private-test")
+    monkeypatch.setenv("OPENAI_REVIEW_MODEL", "test-model")
     monkeypatch.setenv(name, value)
 
     with pytest.raises(AIProviderConfigurationError):

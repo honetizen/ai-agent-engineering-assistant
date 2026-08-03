@@ -4,7 +4,6 @@ from fastapi.testclient import TestClient
 
 from app.api.pull_requests import get_github_client
 from app.exceptions.ai_provider import (
-    AIProviderConfigurationError,
     AIProviderError,
     AIProviderResponseError,
     AIProviderTimeoutError,
@@ -108,10 +107,8 @@ def test_openai_review_endpoint_maps_missing_configuration(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     app.dependency_overrides[get_github_client] = github_client
-    monkeypatch.setattr(
-        "app.api.pull_requests.create_openai_provider",
-        lambda: (_ for _ in ()).throw(AIProviderConfigurationError("sk-secret")),
-    )
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_REVIEW_MODEL", raising=False)
     try:
         with TestClient(app) as client:
             response = client.post(PATH)
@@ -120,4 +117,4 @@ def test_openai_review_endpoint_maps_missing_configuration(
 
     assert response.status_code == 503
     assert response.json() == {"detail": "OpenAI provider is not configured"}
-    assert "sk-secret" not in response.text
+    assert "OPENAI_API_KEY" not in response.text

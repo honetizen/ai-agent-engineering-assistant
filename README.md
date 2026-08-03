@@ -1,42 +1,88 @@
-<<<<<<< HEAD
 # AI GitHub Engineering Assistant
 
-AI GitHub Engineering Assistant 是一个面向 GitHub 工程协作场景的后端服务。项目目标是逐步接入 GitHub 数据，为后续的工程信息分析与辅助能力提供清晰、可扩展的服务基础。
+AI GitHub Engineering Assistant is a FastAPI service that builds a consistent,
+structured review package from GitHub pull requests and supports deterministic
+and provider-based code review workflows.
 
-## 当前阶段
+## Local development
 
-当前处于 **V0：GitHub PR 数据接入** 阶段。本阶段仅建立最小可运行的 FastAPI 项目骨架，并为后续通过 GitHub REST API 获取 Pull Request 数据做好准备。
-
-## 初步工作流
-
-1. 从环境变量读取 `GITHUB_TOKEN`。
-2. 接收 GitHub 仓库与 Pull Request 标识。
-3. 使用 GitHub REST API 获取 Pull Request 数据。
-4. 将标准化后的数据通过 API 返回给调用方。
-
-当前版本仅实现服务健康检查，尚未实现 GitHub API 调用。
-
-## 本地运行
-
-1. 创建并激活 Python 虚拟环境。
-2. 安装依赖：
+1. Create and activate a Python virtual environment.
+2. Install dependencies:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-3. 复制 `.env.example` 为 `.env`，后续接入 GitHub API 时填写 Token。
-4. 启动服务：
+3. Copy `.env.example` to `.env` and set only the credentials needed for the
+   feature being exercised.
+4. Start the service:
 
    ```bash
-   uvicorn app.main:app --reload
+   python -m uvicorn app.main:app --reload
    ```
 
-5. 访问 `GET http://127.0.0.1:8000/health`，应返回：
+5. Check `GET http://127.0.0.1:8000/health`.
 
-   ```json
-   {"status": "ok"}
-   ```
-=======
-# ai-agent-engineering-assistant
->>>>>>> 8d75b80454e4707fab4c2e45a183b9ce77be8abf
+## Current Development Status
+
+Completed:
+
+- GitHub pull request metadata and changed-file retrieval
+- Deterministic review rules
+- Project and code context construction
+- Base SHA and Head SHA version consistency, including fork pull requests
+- ReviewPolicy
+- Prompt Builder
+- Prompt injection boundaries
+- Prompt character budgets and truncation records
+- Mock AI Provider
+- Async OpenAI Provider
+- Responses API Structured Outputs
+- Mocked automated tests
+
+Current limitation:
+
+Real OpenAI API end-to-end validation has not yet been performed because API
+billing/account access is not currently available.
+
+The paid-provider endpoint remains explicit:
+
+```text
+POST /github/repos/{owner}/{repo}/pulls/{pull_number}/ai-review/openai
+```
+
+The default Mock review path remains unchanged and does not automatically call
+the paid provider:
+
+```text
+GET /github/repos/{owner}/{repo}/pulls/{pull_number}/ai-review
+```
+
+### Resume real API validation
+
+After API access is available:
+
+1. Configure `OPENAI_API_KEY` and `OPENAI_REVIEW_MODEL`.
+2. Create a small controlled pull request containing known review issues.
+3. Call the real OpenAI review endpoint.
+4. Verify finding accuracy, file paths, line locations, false positives, and omissions.
+5. Decide whether to improve Prompt policy, context coverage, or related-file discovery.
+
+The model ID must be one that is actually available to the configured OpenAI
+account. Calling the real endpoint can incur API charges. The following commands
+are examples only and are not run as part of automated tests:
+
+```powershell
+$env:OPENAI_API_KEY="your-api-key"
+$env:OPENAI_REVIEW_MODEL="your-available-model-id"
+$env:OPENAI_TIMEOUT_SECONDS="60"
+$env:OPENAI_MAX_OUTPUT_TOKENS="3000"
+
+python -m uvicorn app.main:app --reload
+
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "http://127.0.0.1:8000/github/repos/{owner}/{repo}/pulls/{pull_number}/ai-review/openai"
+```
+
+Do not commit `.env` or real API credentials.

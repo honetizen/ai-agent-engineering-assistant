@@ -1,4 +1,5 @@
 import httpx
+import pytest
 from fastapi.testclient import TestClient
 
 from app.api.pull_requests import get_github_client
@@ -39,7 +40,11 @@ def client_with_transport(transport: httpx.MockTransport) -> TestClient:
     return TestClient(app)
 
 
-def test_ai_review_api_returns_mock_report() -> None:
+def test_ai_review_api_returns_mock_report_without_openai_configuration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_REVIEW_MODEL", raising=False)
     def handler(request: httpx.Request) -> httpx.Response:
         path = request.url.path
         if path.endswith("/pulls/1/files"):

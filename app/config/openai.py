@@ -11,7 +11,7 @@ class OpenAIProviderConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     api_key: SecretStr
-    model: str = Field(default="gpt-5.6-sol", min_length=1)
+    model: str = Field(min_length=1)
     timeout_seconds: float = Field(default=60.0, gt=0)
     max_output_tokens: int = Field(default=4_000, gt=0)
 
@@ -24,10 +24,16 @@ def load_openai_provider_config() -> OpenAIProviderConfig:
             "OPENAI_API_KEY is required for the OpenAI provider"
         )
 
+    model = os.getenv("OPENAI_REVIEW_MODEL")
+    if model is None or not model.strip():
+        raise AIProviderConfigurationError(
+            "OPENAI_REVIEW_MODEL is required for the OpenAI review provider"
+        )
+
     try:
         return OpenAIProviderConfig(
             api_key=SecretStr(api_key.strip()),
-            model=os.getenv("OPENAI_REVIEW_MODEL", "gpt-5.6-sol"),
+            model=model.strip(),
             timeout_seconds=os.getenv("OPENAI_TIMEOUT_SECONDS", "60"),
             max_output_tokens=os.getenv(
                 "OPENAI_MAX_OUTPUT_TOKENS",
