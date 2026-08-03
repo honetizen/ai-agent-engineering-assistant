@@ -1,4 +1,5 @@
 from app.config.review_policy import DEFAULT_REVIEW_POLICY
+from app.schemas.ai_prompt import AIReviewPrompt
 from app.schemas.ai_review import AIReviewFinding, AIReviewReport
 from app.schemas.code_context import CodeContext
 from app.schemas.project_context import ProjectContext
@@ -52,10 +53,10 @@ def test_custom_provider_replaces_mock_provider() -> None:
 
     class CustomProvider:
         def __init__(self) -> None:
-            self.received_context: ReviewContext | None = None
+            self.received_prompt: AIReviewPrompt | None = None
 
-        def review(self, received: ReviewContext) -> AIReviewReport:
-            self.received_context = received
+        def review(self, received: AIReviewPrompt) -> AIReviewReport:
+            self.received_prompt = received
             return AIReviewReport(
                 summary="Custom review completed",
                 findings=[
@@ -72,7 +73,9 @@ def test_custom_provider_replaces_mock_provider() -> None:
     provider = CustomProvider()
     report = review_context(context, provider=provider)
 
-    assert provider.received_context is context
+    assert isinstance(provider.received_prompt, AIReviewPrompt)
+    assert "=== REVIEW POLICY ===" in provider.received_prompt.review_input
+    assert "Add AI review skeleton" in provider.received_prompt.review_input
     assert isinstance(report, AIReviewReport)
     assert report.summary == "Custom review completed"
     assert report.findings[0].level == "high"
